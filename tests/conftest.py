@@ -41,3 +41,6 @@ def browser(request):
     driver.base_opencart_url = base_opencart_url
     yield driver
     driver.close()
+
+
+
