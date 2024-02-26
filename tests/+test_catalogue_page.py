@@ -2,10 +2,9 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import time
 from selenium.webdriver import ActionChains
 import random
-from selenium.common.exceptions import NoSuchElementException
+
 
 @pytest.fixture()
 def open_catalogue(browser):
