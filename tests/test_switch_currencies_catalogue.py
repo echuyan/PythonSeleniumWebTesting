@@ -1,35 +1,54 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import time
+import pytest
 from selenium.webdriver import ActionChains
 
-def test_add_item_to_cart(browser):
-    """
-        Test is designed to check adding a random item from the main page to the cart
-    """
-    actions = ActionChains(browser)
+
+@pytest.fixture()
+def open_catalogue(browser):
     browser.get(browser.base_opencart_url)
+    actions = ActionChains(browser)
     wait = WebDriverWait(browser, 5)
-    featured_elements = wait.until(EC.visibility_of_all_elements_located((By.CLASS_NAME, "product-thumb")))
-    element = featured_elements[0]
-    title = element.find_element(By.XPATH, ("//div/div/h4/a")).text
-    actions.scroll_to_element(element).perform()
-    addtocart = element.find_element(By.XPATH, ("//div/form/div/button"))
-    actions.move_to_element(addtocart).click().perform()
-    wait.until(EC.presence_of_element_located((By.XPATH, "//div[@id='alert']")))
-    #browser.find_element(By.XPATH, "//div[@id='alert']/div/button[@class='btn-close']").click()
-    time.sleep(5)
+    wait.until(EC.visibility_of_all_elements_located((By.ID, "narbar-menu")))
+    element = browser.find_element(By.XPATH, ("//div[@id='narbar-menu']/ul/li/a")).click()
+    #actions.move_to_element(element).perform()
+    wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "see-all")))
+    browser.find_element(By.XPATH, ("//div[@id='narbar-menu']/ul/li/div/a[@class='see-all']")).click()
+    yield
 
-    wait.until(EC.presence_of_element_located((By.XPATH, "//div[@id='header-cart']/div/button")))
-    browser.find_element(By.XPATH,"//div[@id='header-cart']/div/button").click()
-    wait.until(EC.presence_of_element_located((By.XPATH, "//strong[contains(text(), 'View Cart')]"))).click()
-    wait.until(EC.presence_of_element_located((By.XPATH, "//strong[contains(text(), 'Checkout')]")))
 
-    items = browser.find_elements(By.XPATH,"//div[@id='shopping-cart']/div/table/tbody/tr/td[@class='text-start text-wrap']/a")
-    titles = []
-    for item in items:
-        titles.append(item.text)
 
-    assert title in titles
+def test_switch_cur_catalogue(open_catalogue,browser):
+    """
+        Test is designed to check currency switching at the catalogue page
+    """
+
+    wait = WebDriverWait(browser,5)
+    wait.until(EC.visibility_of_all_elements_located((By.XPATH, ("//span[@class='price-new']"))))
+    prices = browser.find_elements(By.XPATH, ("//span[@class='price-new']"))
+    old_prices=[]
+    for item in prices:
+        old_prices.append(item.text)
+
+    current_cur = browser.find_element(By.XPATH, ("//form[@id='form-currency']/div/a/strong")).text
+
+    browser.find_element(By.XPATH, ("//span[contains(text(),'Currency')]")).click()
+
+    switches = browser.find_elements(By.XPATH, ("//form[@id='form-currency']/div/ul/li/a"))
+    for switch in switches:
+        if current_cur in switch.text:
+            pass
+        else:
+            switch.click()
+            break
+
+    prices = browser.find_elements(By.XPATH, ("//span[@class='price-new']"))
+    new_prices = []
+    for item in prices:
+        new_prices.append(item.text)
+
+    old_set = set(old_prices)
+    new_set = set(new_prices)
+    assert old_set.isdisjoint(new_set)
 
